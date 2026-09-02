@@ -1,0 +1,301 @@
+  const handleDownloadPDF = () => {
+    const isHighRisk = prediction === 1;
+    const probabilityText = (probability * 100).toFixed(2) + '%';
+    const riskLevel = isHighRisk ? 'High Risk' : 'Low Risk';
+    const riskColor = isHighRisk ? '#dc2626' : '#16a34a'; // red-600 or green-600
+
+    // Build patient information table
+    let patientInfoHTML = '';
+    ALL_FEATURES.forEach(feat => {
+      if (inputData && feat in inputData) {
+        let val = inputData[feat];
+        if (REVERSE_MAPPING[feat] && REVERSE_MAPPING[feat][val] !== undefined) {
+          val = REVERSE_MAPPING[feat][val];
+        }
+        patientInfoHTML += `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 12px; text-align: left; font-weight: 600; color: #1f2937; border-right: 1px solid #e5e7eb; background-color: #f9fafb;">${FEATURE_LABELS[feat]}</td>
+            <td style="padding: 12px; text-align: left; color: #4b5563;">${val}</td>
+          </tr>
+        `;
+      }
+    });
+
+    // Build risk factors section if available
+    let riskFactorsHTML = '';
+    if (riskFactors && riskFactors.length > 0) {
+      riskFactorsHTML = '<h3 style="color: #dc2626; margin: 20px 0 10px 0; font-size: 16px; font-weight: bold;">KEY RISK FACTORS</h3><ul style="margin: 0 0 20px 0; padding-left: 20px; color: #4b5563;">';
+      riskFactors.slice(0, 5).forEach(factor => {
+        riskFactorsHTML += `<li style="margin-bottom: 5px;">${factor.text} - ${factor.detail}</li>`;
+      });
+      riskFactorsHTML += '</ul>';
+    }
+
+    // Build protective factors section if available
+    let protectiveFactorsHTML = '';
+    if (protectiveFactors && protectiveFactors.length > 0) {
+      protectiveFactorsHTML = '<h3 style="color: #16a34a; margin: 20px 0 10px 0; font-size: 16px; font-weight: bold;">PROTECTIVE FACTORS</h3><ul style="margin: 0 0 20px 0; padding-left: 20px; color: #4b5563;">';
+      protectiveFactors.slice(0, 5).forEach(factor => {
+        protectiveFactorsHTML += `<li style="margin-bottom: 5px;">${factor.text} - ${factor.detail}</li>`;
+      });
+      protectiveFactorsHTML += '</ul>';
+    }
+
+    // Complete HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Heart Risk Prediction Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+            .page-break { page-break-before: always; }
+          </style>
+        </head>
+        <body>
+          <div style="
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 40px; 
+            background: white; 
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            color: #1f2937;
+          ">
+            <!-- Header -->
+            <div style="
+              text-align: center; 
+              margin-bottom: 30px; 
+              padding-bottom: 20px; 
+              border-bottom: 3px solid #374151;
+            ">
+              <h1 style="
+                color: #1f2937; 
+                margin: 0 0 8px 0; 
+                font-size: 28px; 
+                text-transform: uppercase; 
+                letter-spacing: 1px; 
+                font-weight: bold;
+              ">Quantum Heart Disease Prediction</h1>
+              <h2 style="
+                color: #4b5563; 
+                margin: 0; 
+                font-size: 18px; 
+                font-weight: 600;
+              ">AI-Powered Cardiovascular Risk Assessment Report</h2>
+              <div style="
+                color: #6b7280; 
+                font-size: 14px; 
+                margin-top: 15px; 
+                font-weight: 500;
+              ">
+                Generated on: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+
+            <!-- Prediction Summary Box -->
+            <div style="
+              border: 2px solid ${riskColor}; 
+              border-radius: 8px; 
+              padding: 25px; 
+              margin-bottom: 30px;
+              background-color: #f8fafc;
+            ">
+              <h3 style="
+                color: ${riskColor}; 
+                margin: 0 0 20px 0; 
+                font-size: 20px; 
+                font-weight: bold;
+                text-align: center;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              ">Risk Assessment Summary</h3>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div style="
+                  background: white; 
+                  padding: 15px; 
+                  border-radius: 6px; 
+                  text-align: center; 
+                  border: 1px solid #e5e7eb;
+                ">
+                  <div style="font-weight: 600; color: #374151; font-size: 14px;">Risk Level</div>
+                  <div style="
+                    font-weight: 700; 
+                    color: ${riskColor}; 
+                    font-size: 24px; 
+                    margin-top: 5px;
+                  ">${riskLevel}</div>
+                </div>
+                <div style="
+                  background: white; 
+                  padding: 15px; 
+                  border-radius: 6px; 
+                  text-align: center; 
+                  border: 1px solid #e5e7eb;
+                ">
+                  <div style="font-weight: 600; color: #374151; font-size: 14px;">Risk Probability</div>
+                  <div style="
+                    font-weight: 700; 
+                    color: ${riskColor}; 
+                    font-size: 24px; 
+                    margin-top: 5px;
+                  ">${probabilityText}</div>
+                </div>
+              </div>
+
+              <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb; margin-top: 15px;">
+                <div style="font-weight: 600; color: #374151; font-size: 14px; margin-bottom: 5px;">Prediction Model</div>
+                <div style="color: #4b5563; font-size: 14px;">Ensemble Quantum Support Vector Classification (QSVC) Model</div>
+              </div>
+            </div>
+
+            <!-- Patient Information Section -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="
+                color: #374151; 
+                margin: 0 0 15px 0; 
+                font-size: 20px; 
+                font-weight: bold;
+                border-bottom: 2px solid #d1d5db;
+                padding-bottom: 8px;
+              ">Patient Clinical Information</h3>
+              <table style="
+                width: 100%; 
+                border-collapse: collapse; 
+                text-align: left; 
+                font-size: 14px; 
+                border: 2px solid #374151;
+                border-radius: 6px;
+                overflow: hidden;
+              ">
+                <thead style="background-color: #f3f4f6;">
+                  <tr>
+                    <th style="
+                      padding: 12px; 
+                      border-bottom: 2px solid #374151; 
+                      color: #1f2937; 
+                      font-weight: 700; 
+                      text-align: left;
+                      background-color: #f9fafb;
+                    ">Clinical Parameter</th>
+                    <th style="
+                      padding: 12px; 
+                      border-bottom: 2px solid #374151; 
+                      color: #1f2937; 
+                      font-weight: 700; 
+                      text-align: left;
+                      background-color: #f9fafb;
+                    ">Patient Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${patientInfoHTML}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Risk and Protective Factors -->
+            <div style="margin-bottom: 30px;">
+              ${riskFactorsHTML}
+              ${protectiveFactorsHTML}
+            </div>
+
+            <!-- Disclaimer -->
+            <div style="
+              margin-top: 40px; 
+              text-align: center; 
+              color: #4b5563; 
+              font-size: 12px; 
+              border-top: 2px solid #d1d5db; 
+              padding-top: 20px;
+              background-color: #fef2f2;
+              border-radius: 6px;
+              padding: 15px;
+            ">
+              <p style="margin: 0 0 5px 0; font-weight: 700; color: #dc2626;">MEDICAL DISCLAIMER</p>
+              <p style="margin: 0; line-height: 1.5;">
+                This report is generated by an artificial intelligence prediction model and is intended for informational purposes only. 
+                It is NOT a substitute for professional medical advice, diagnosis, or treatment. 
+                Always consult with qualified healthcare providers for medical decisions.
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="
+              margin-top: 30px;
+              text-align: center;
+              color: #6b7280;
+              font-size: 12px;
+              padding-top: 15px;
+              border-top: 1px solid #e5e7eb;
+            ">
+              <p style="margin: 0;">Quantum Heart Disease Prediction System</p>
+              <p style="margin: 5px 0 0 0;">Generated by Quantum Machine Learning Algorithms</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Create a temporary container
+    const tempContainer = document.createElement('div');
+    tempContainer.id = 'pdf-container';
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.top = '0';
+    tempContainer.style.left = '0';
+    tempContainer.style.width = '100%';
+    tempContainer.style.height = '100%';
+    tempContainer.style.overflow = 'auto';
+    tempContainer.style.zIndex = '-1000';
+    tempContainer.style.opacity = '0';
+    tempContainer.style.pointerEvents = 'none';
+    tempContainer.style.backgroundColor = 'white';
+
+    tempContainer.innerHTML = htmlContent;
+    document.body.appendChild(tempContainer);
+
+    // Wait for the content to render, then generate PDF
+    setTimeout(() => {
+      const opt = {
+        margin: 0.5,
+        filename: `Heart_Risk_Prediction_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          width: tempContainer.scrollWidth,
+          height: tempContainer.scrollHeight,
+          windowWidth: tempContainer.scrollWidth,
+          windowHeight: tempContainer.scrollHeight
+        },
+        jsPDF: { 
+          unit: 'in', 
+          format: 'letter', 
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(tempContainer)
+        .save()
+        .then(() => {
+          document.body.removeChild(tempContainer);
+        })
+        .catch(err => {
+          console.error('PDF generation error:', err);
+          document.body.removeChild(tempContainer);
+        });
+    }, 1000); // Longer timeout to ensure full rendering
+  };
+
+export default PredictionSection;
